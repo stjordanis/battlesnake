@@ -2,9 +2,16 @@ import numpy as np
 # import whatever makes the snakes go
 import copy
 import sys
+import json
+
+
+TYPE = {"blank": 0, "food": 1, "you": 2, "obstacle": 3}
+WIDTH = 11
+HEIGHT = 11
+
 
 class NN():
-    def __init__(self):
+    def __init__(self, width=WIDTH, height=HEIGHT):
         # Number of nodes? 
         # We want up-down-left-right, not real veolocity values
         self.FC1 = np.random.normal(0,np.sqrt(2/(4+32)),(4,32))
@@ -41,6 +48,7 @@ class NN():
         # We want up-down-left-right, not real veolocity values
         #X = self.predict_proba(X)
         #return np.argmax(X, axis=1).reshape((-1, 1))
+        pass
 
 
     def mutate(self, stdev=0.03):
@@ -70,6 +78,59 @@ class NN():
         self.bias1 = npzfile['bias1']
         self.bias2 = npzfile['bias2']
         self.bias3 = npzfile['bias3']
+
+
+# Snake representation
+def parse_json(json_string, game_id, width=WIDTH, height=HEIGHT):
+    state = json.loads(json_string)
+    print(state.keys())
+
+    board = np.zeros((width, height))
+
+    if game_id != state["game"]["id"]:
+        print("Error, game board id mismatch.")
+        return board.flatten()
+
+    food_x = []
+    food_y = []
+
+    for f in state["board"]["food"]:
+        food_x.append(int(f["x"]))
+        food_y.append(int(f["y"]))
+
+
+    obstacle_x = []
+    obstacle_y = []
+
+    for i in range(1, len(state["you"]["body"])):
+        obstacle_x.append(state["you"]["body"][i]["x"])
+        obstacle_y.append(state["you"]["body"][i]["y"])
+
+    for snek in state["board"]["snakes"]:
+        is_head = True
+        for seg in snek["body"]:
+            if is_head:
+                if len(snek["body"]) < len(state["you"]["body"]):
+                    food_x.append(seg["x"])
+                    food_y.append(seg["y"])
+                else:
+                    obstacle_x.append(seg["x"])
+                    obstacle_y.append(seg["y"])
+                is_head = False
+            else:
+                obstacle_x.append(seg["x"])
+                obstacle_y.append(seg["y"])
+
+    board[state["you"]["body"][0]["y"], state["you"]["body"][0]["x"]] = TYPE["you"]
+
+    board[food_y, food_x] = TYPE["food"]
+
+    board[obstacle_y, obstacle_x] = TYPE["obstacle"]
+
+    print(board)
+
+    return board.flatten()
+
 
 
 def run_simulation(network, env, count=20, penalize_angle=False, penalize_displacement=False):
@@ -157,12 +218,12 @@ def demonstrate(network):
             # env.close()
             return score
 
-if __name__ == '__main__':
-    if len(sys.argv[1:]) > 0:
-        network = NN()
-        network.load_weights(sys.argv[1])
-    else:
-        network = evolve()
-    while True:
-        score = demonstrate(network)
-print("Survived {} steps".format(score))
+# if __name__ == '__main__':
+#     if len(sys.argv[1:]) > 0:
+#         network = NN()
+#         network.load_weights(sys.argv[1])
+#     else:
+#         network = evolve()
+#     while True:
+#         score = demonstrate(network)
+# print("Survived {} steps".format(score))
