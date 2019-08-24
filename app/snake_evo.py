@@ -14,12 +14,12 @@ class NN():
     def __init__(self, width=WIDTH, height=HEIGHT):
         # Number of nodes? 
         # We want up-down-left-right, not real veolocity values
-        self.FC1 = np.random.normal(0,np.sqrt(2/(4+32)),(4,32))
-        self.bias1 = np.random.normal(0,np.sqrt(2/(4+32)),(1,32))
-        self.FC2 = np.random.normal(0,np.sqrt(2/(32+16)),(32,16))
-        self.bias2 = np.random.normal(0,np.sqrt(2/(32+16)),(1,16))
-        self.FC3 = np.random.normal(0,np.sqrt(2/(16+2)),(16,2))
-        self.bias3 = np.random.normal(0,np.sqrt(2/(16+2)),(1,2))
+        self.FC1 = np.random.normal(0,np.sqrt(2/(WIDTH*HEIGHT+64)),(WIDTH*HEIGHT,64))
+        self.bias1 = np.random.normal(0,np.sqrt(2/(WIDTH*HEIGHT+64)),(1,64))
+        self.FC2 = np.random.normal(0,np.sqrt(2/(64+64)),(64,64))
+        self.bias2 = np.random.normal(0,np.sqrt(2/(64+64)),(1,64))
+        self.FC3 = np.random.normal(0,np.sqrt(2/(64+4)),(64,4))
+        self.bias3 = np.random.normal(0,np.sqrt(2/(64+4)),(1,4))
 
 
     def relu(self, X):
@@ -34,7 +34,7 @@ class NN():
     def predict_proba(self, X):
         # If you changed the structure, change the prediction
         # We want up-down-left-right, not real veolocity values
-        X = np.array(X).reshape((-1,4))
+        X = np.array(X).reshape((-1,WIDTH*HEIGHT))
         X = X @ self.FC1 + self.bias1
         X = self.relu(X)
         X = X @ self.FC2 + self.bias2
@@ -46,8 +46,8 @@ class NN():
     def predict(self, X):
         # Our prediction must be different since our action must be different
         # We want up-down-left-right, not real veolocity values
-        #X = self.predict_proba(X)
-        #return np.argmax(X, axis=1).reshape((-1, 1))
+        X = self.predict_proba(X)
+        return np.argmax(X, axis=1).reshape((-1, 1))
         pass
 
 
