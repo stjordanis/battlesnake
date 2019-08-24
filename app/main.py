@@ -2,8 +2,13 @@ import json
 import os
 import random
 import bottle
+import sys
+import snake_evo
 
 from api import ping_response, start_response, move_response, end_response
+
+
+
 
 @bottle.route('/')
 def index():
@@ -33,54 +38,60 @@ def ping():
 @bottle.post('/start')
 def start():
     data = bottle.request.json
-
     """
     TODO: If you intend to have a stateful snake AI,
             initialize your snake state here using the
             request's data if necessary.
     """
-    print(json.dumps(data))
+
 
     color = "#FF00FF"
-
     return start_response(color)
 
 
 @bottle.post('/move')
 def move():
+    global score
     data = bottle.request.json
-
     """
     TODO: Using the data from the endpoint request object, your
             snake AI must choose a direction to move in.
     """
-    print(json.dumps(data))
+    score += 1
+    board = snake_evo.parse_json(json.dumps(data))
+    prediction = brain.predict(board)
 
     directions = ['up', 'down', 'left', 'right']
-    direction = random.choice(directions)
 
-    return move_response('right')
+    return move_response(directions[prediction])
 
 
 @bottle.post('/end')
 def end():
     data = bottle.request.json
-
     """
     TODO: If your snake AI was stateful,
         clean up any stateful objects here.
     """
-    print(json.dumps(data))
-
+    with open(f'snake_{sys.argv[1]}.txt', 'w') as f:
+        print(f"WRITING {score}")
+        f.write(f'{score}')
     return end_response()
+
+
+
 
 # Expose WSGI app (so gunicorn can find it)
 application = bottle.default_app()
 
 if __name__ == '__main__':
+    brain = snake_evo.NN(width=11, height=11)
+    score = 0
+    brain.load_weights(sys.argv[2])
     bottle.run(
         application,
         host=os.getenv('IP', '0.0.0.0'),
-        port=os.getenv('PORT', '8080'),
+        #host='localhost',
+        port=os.getenv('PORT', sys.argv[1]),
         debug=os.getenv('DEBUG', True)
     )

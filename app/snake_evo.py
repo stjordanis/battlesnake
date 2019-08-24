@@ -47,8 +47,10 @@ class NN():
         # Our prediction must be different since our action must be different
         # We want up-down-left-right, not real veolocity values
         X = self.predict_proba(X)
-        return np.argmax(X, axis=1).reshape((-1, 1))
-        pass
+        X = np.argmax(X, axis=1).reshape((-1, 1))
+        #print(X)
+        #sys.stdout.flush()
+        return X[0][0]
 
 
     def mutate(self, stdev=0.03):
@@ -79,17 +81,30 @@ class NN():
         self.bias2 = npzfile['bias2']
         self.bias3 = npzfile['bias3']
 
+    def load_brain(self, jsonbrain):
+        D = json.loads(jsonbrain)
+        self.FC1 = D['FC1']
+        self.FC2 = D['FC2']
+        self.FC3 = D['FC3']
+        self.bias1 = D['bias1']
+        self.bias2 = D['bias2']
+        self.bias3 = D['bias3']
+
+    def brain_to_json(self):
+        return json.dumps({"FC1" : self.FC1.tolist(),
+                            "FC2" : self.FC2.tolist(),
+                            "FC3" : self.FC3.tolist(),
+                            "bias1" : self.bias1.tolist(),
+                            "bias2" : self.bias2.tolist(),
+                            "bias3" : self.bias3.tolist()})
+
 
 # Snake representation
-def parse_json(json_string, game_id, width=WIDTH, height=HEIGHT):
+def parse_json(json_string, width=WIDTH, height=HEIGHT):
     state = json.loads(json_string)
-    print(state.keys())
+    #print(state.keys())
 
     board = np.zeros((width, height))
-
-    if game_id != state["game"]["id"]:
-        print("Error, game board id mismatch.")
-        return board.flatten()
 
     food_x = []
     food_y = []
@@ -127,7 +142,7 @@ def parse_json(json_string, game_id, width=WIDTH, height=HEIGHT):
 
     board[obstacle_y, obstacle_x] = TYPE["obstacle"]
 
-    print(board)
+    #print(board)
 
     return board.flatten()
 
