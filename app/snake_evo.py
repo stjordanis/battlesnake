@@ -5,19 +5,21 @@ import sys
 import json
 
 
-TYPE = {"blank": 0, "food": 1, "you": 2, "obstacle": 3}
+TYPE = {"blank": 0, "food": 2, "you": 1, "obstacle": -1}
 WIDTH = 11
 HEIGHT = 11
 
+WINDOW_LENGTH = 5
+
 
 class NN():
-    def __init__(self, width=WIDTH, height=HEIGHT):
+    def __init__(self):
         # Number of nodes? 
         # We want up-down-left-right, not real veolocity values
-        self.FC1 = np.random.normal(0,np.sqrt(2/(WIDTH*HEIGHT+64)),(WIDTH*HEIGHT,64))
-        self.bias1 = np.random.normal(0,np.sqrt(2/(WIDTH*HEIGHT+64)),(1,64))
-        self.FC2 = np.random.normal(0,np.sqrt(2/(64+64)),(64,64))
-        self.bias2 = np.random.normal(0,np.sqrt(2/(64+64)),(1,64))
+        self.FC1 = np.random.normal(0,np.sqrt(2/(WINDOW_LENGTH**2+64)),(WINDOW_LENGTH**2,64))
+        self.bias1 = np.random.normal(0,np.sqrt(2/(WINDOW_LENGTH**2+64)),(1,64))
+        self.FC2 = np.random.normal(0,np.sqrt(2/(64+32)),(64,32))
+        self.bias2 = np.random.normal(0,np.sqrt(2/(64+32)),(1,32))
         self.FC3 = np.random.normal(0,np.sqrt(2/(64+4)),(64,4))
         self.bias3 = np.random.normal(0,np.sqrt(2/(64+4)),(1,4))
 
@@ -34,7 +36,7 @@ class NN():
     def predict_proba(self, X):
         # If you changed the structure, change the prediction
         # We want up-down-left-right, not real veolocity values
-        X = np.array(X).reshape((-1,WIDTH*HEIGHT))
+        X = np.array(X).reshape((-1,WINDOW_LENGTH**2))
         X = X @ self.FC1 + self.bias1
         X = self.relu(X)
         X = X @ self.FC2 + self.bias2
@@ -142,9 +144,25 @@ def parse_json(json_string, width=WIDTH, height=HEIGHT):
 
     board[obstacle_y, obstacle_x] = TYPE["obstacle"]
 
-    #print(board)
+    board[state["you"]["body"][0]["y"], state["you"]["body"][0]["x"]] = TYPE["you"]
 
-    return board.flatten()
+    window_margin = WINDOW_LENGTH // 2
+
+    lazy_board = np.full((height+4, width+4), -1)
+
+    lazy_x = state["you"]["body"][0]["x"] - window_margin + 2
+    lazy_y = state["you"]["body"][0]["y"] - window_margin + 2
+
+    lazy_board[2:2+board.shape[0], 2:2+board.shape[1]] = board
+    print(lazy_x)
+    print(lazy_y)
+
+    window = lazy_board[lazy_y:lazy_y+WINDOW_LENGTH, lazy_x:lazy_x+WINDOW_LENGTH]
+
+    print(lazy_board)
+    print(window)
+
+    return window.flatten()
 
 
 
