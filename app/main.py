@@ -41,7 +41,7 @@ def start():
     """
     print(json.dumps(data))
 
-    color = "#00FF00"
+    color = "#FF00FF"
 
     return start_response(color)
 
@@ -58,7 +58,7 @@ def move():
 
     directions = ['up', 'down', 'left', 'right']
     direction = random.choice(directions)
-    
+
     return move_response('right')
 
 
